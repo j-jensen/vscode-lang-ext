@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
+import { OutputChannel, window } from 'vscode';
 
 export class OutputWindow {
 
-    private static _msgChannel: vscode.OutputChannel;
+    private static _msgChannel: OutputChannel;
 
     private static get msgChannel() {
 
         if (!OutputWindow._msgChannel) {
-            OutputWindow._msgChannel = vscode.window.createOutputChannel('Live Sass Compile');
+            OutputWindow._msgChannel = window.createOutputChannel('Live LANG Compile');
         }
 
         return OutputWindow._msgChannel;

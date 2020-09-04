@@ -1,24 +1,21 @@
-import * as vscode from "vscode";
+import { workspace, Uri, FileSystemWatcher, languages, DiagnosticCollection, window, DiagnosticSeverity, Position, Range, Diagnostic } from "vscode";
 import * as fs from "fs";
-import { Validator, validate, Schema } from "jsonschema";
 import { OutputWindow } from './outputWindow';
 import { StatusBarUi } from "./StatusbarUI";
 import { transpile } from "./transpiler";
-import { generateSchemaSync, isBase, getBaseFsPath, getLocalizedFsPath } from "./schema";
+import { generateSchemaSync, isBase, getBaseFsPath, getLocalizedFsPath, SchemaDictionary, Schema, validate } from "./schema";
 
-const languages = ["se", "en"];
-
-interface SchemaDictionary {
-  [path: string]: Schema;
-}
+const LANGS = ["se", "en"];
 
 export class LangModel {
-  watcher: vscode.FileSystemWatcher | null;
+  watcher: FileSystemWatcher | null;
   schemas: SchemaDictionary = {};
+  problems: DiagnosticCollection;
 
   constructor() {
     StatusBarUi.init();
     this.watcher = null;
+    this.problems = languages.createDiagnosticCollection("LANG");
   }
 
   startWatching() {
@@ -28,7 +25,7 @@ export class LangModel {
     }
     this.readSchemas();
 
-    this.watcher = vscode.workspace.createFileSystemWatcher("**/*.lang");
+    this.watcher = workspace.createFileSystemWatcher("**/*.lang");
     this.watcher.onDidChange(this.compile.bind(this));
     StatusBarUi.watching();
   }
@@ -44,14 +41,14 @@ export class LangModel {
   }
 
   readSchemas() {
-    vscode.workspace.findFiles("**/*.lang")
-      .then((uris: vscode.Uri[]) => {
+    workspace.findFiles("**/*.lang")
+      .then((uris: Uri[]) => {
         this.schemas = uris
           .filter((uri) => isBase(uri.fsPath))
           .reduce((schemas: SchemaDictionary, uri) => {
             const newSchema = generateSchemaSync(uri.fsPath);
             schemas[uri.fsPath] = newSchema;
-            languages.forEach((lang) => {
+            LANGS.forEach((lang) => {
               const localizedFsPath = getLocalizedFsPath(uri.fsPath, lang);
               this.validateLocalized(newSchema, localizedFsPath);
             });
@@ -63,29 +60,41 @@ export class LangModel {
   validateLocalized(schema: Schema, localizedFsPath: string) {
     fs.readFile(localizedFsPath, 'utf8', (err, data: string) => {
       if (!err) {
-        const validator = new Validator();
-        const module = JSON.parse(data);
-        const res = validator.validate(module, schema);
-        if (res.errors.length) {
-          OutputWindow.show(`Validation errors for ${localizedFsPath}`, res.errors.map(e => e.message), true);
+        const res = validate(data, schema);
+
+        if (res.length) {
+          this.problems.set(Uri.file(localizedFsPath), res);
+        } else {
+          this.problems.delete(Uri.file(localizedFsPath));
+        }
+      } else {
+        if (err.code === "ENOENT") {
+          //this.problems.set(Uri.file(getBaseFsPath(localizedFsPath)), [new Diagnostic(new Range(new Position(1, 1), new Position(1, 1)), `Missing translation '${localizedFsPath}'.`, DiagnosticSeverity.Warning)]);
+          window.showErrorMessage(`Missing translation ${localizedFsPath}`, "Create")
+            .then((action) => {
+              if (action === "Create") {
+                fs.copyFile(getBaseFsPath(localizedFsPath), localizedFsPath, 0, console.warn);
+              }
+            });
         }
       }
     });
   }
 
-  compile(uri: vscode.Uri) {
+  compile(uri: Uri) {
     if (isBase(uri.fsPath)) {
       const schema = this.schemas[uri.fsPath] = generateSchemaSync(uri.fsPath);
-      languages.forEach((lang) => {
+      LANGS.forEach((lang) => {
         const localizedFsPath = getLocalizedFsPath(uri.fsPath, lang);
         this.validateLocalized(schema, localizedFsPath);
       });
-      transpile(uri.fsPath, (err, path) => {
+      transpile(uri.fsPath, (err, evt) => {
         if (err !== null) {
           OutputWindow.show("Error occurred in lang-compilation", [err.message], true);
           return;
+        } else if (evt && evt.name) {
+          OutputWindow.show(`${evt.name} typings ${evt.path}`, [], false);
         }
-        OutputWindow.show(`Compiled ${path}`, [], true);
       });
     } else {
       const schema = this.schemas[getBaseFsPath(uri.fsPath)];

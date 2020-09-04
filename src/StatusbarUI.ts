@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
+import {StatusBarItem, StatusBarAlignment, window} from 'vscode';
 
 export class StatusBarUi {
 
-    private static _statusBarItem: vscode.StatusBarItem;
+    private static _statusBarItem: StatusBarItem;
 
 
     private static get statusBarItem() {
         if (!StatusBarUi._statusBarItem) {
-            StatusBarUi._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 200);
+            StatusBarUi._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 200);
             this.statusBarItem.show();
         }
 
