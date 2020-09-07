@@ -5,7 +5,7 @@ import { StatusBarUi } from "./StatusbarUI";
 import { transpile } from "./transpiler";
 import { generateSchemaSync, isBase, getBaseFsPath, getLocalizedFsPath, SchemaDictionary, Schema, validate } from "./schema";
 
-const LANGS = ["se", "en"];
+const LANGS = workspace.getConfiguration("liveLangCompiler").get("languages", ["en", "se"]);
 
 export class LangModel {
   watcher: FileSystemWatcher | null;

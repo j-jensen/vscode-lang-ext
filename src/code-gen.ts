@@ -4,7 +4,7 @@ interface JsonObject {
   [key: string]: string;
 }
 
-const templateRe = /\$\{(\w+):?(\w+)?\}/g;
+export const templatePattern = /\${(\w+)(?:\s*)\:(?:\s*)(\w+)}/g.source;
 const typedescRe = /(\${\w+)(:\w+)(})/g;
 
 const filenameToInterfaceName = (filename: string): string => path.basename(filename)
@@ -12,12 +12,13 @@ const filenameToInterfaceName = (filename: string): string => path.basename(file
   .replace(/\W+(\w)/g, (_, c) => c.toUpperCase());
 
 const getPropertyTypesignature = (str: string): string => {
-  let m = templateRe.exec(str);
+  const re = new RegExp(templatePattern, "g");
+  let m = re.exec(str);
   const args = [];
   if (m !== null) {
     while (m !== null) {
       args.push([m[1], m[2] || 'any']);
-      m = templateRe.exec(str);
+      m = re.exec(str);
     }
     return `(${args.map(arg => `${arg[0]}: ${arg[1]}`).join(', ')}) => string`;
   }
@@ -25,12 +26,13 @@ const getPropertyTypesignature = (str: string): string => {
 };
 
 const getPropertyStringifiedValue = (str: string, orig: string): string => {
-  let m = templateRe.exec(orig);
+  const re = new RegExp(templatePattern, "g");
+  let m = re.exec(orig);
   const args = [];
   if (m !== null) {
     while (m !== null) {
       args.push(m[1]);
-      m = templateRe.exec(orig);
+      m = re.exec(orig);
     }
     // Outputs ES5 compliant code
     return `function(${args.map(arg => `${arg}`).join(', ')}){ return ${JSON.stringify(str.replace(typedescRe, '$1$3'))}${args.map(arg => `.replace("$\{${arg}}", ${arg})`).join('')}; }`;

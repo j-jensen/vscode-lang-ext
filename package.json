@@ -1,8 +1,8 @@
 {
-  "name": "lang-ext",
+  "name": "live-lang-compiler",
   "displayName": "Monobank live lang compiler",
-  "description": "Autogenerates TypeScript typings for .LANG files.",
-  "version": "0.0.5",
+  "description": "Autogenerates TypeScript typings for .LANG files, and provides basic error-checking.",
+  "version": "0.0.7",
   "publisher": "jesper-jensen",
   "icon": "favicon_128.png",
   "repository": {
@@ -22,19 +22,33 @@
   "contributes": {
     "commands": [
       {
-        "command": "langExt.startWatching",
+        "command": "liveLangCompiler.command.startWatching",
         "title": "Watch LANG files",
         "category": "Monobank LANG"
       },
       {
-        "command": "langExt.stoptWatching",
+        "command": "liveLangCompiler.command.stoptWatching",
         "title": "Stop watching LANG files",
         "category": "Monobank LANG"
       },
       {
-        "command": "langExt.compile",
+        "command": "liveLangCompiler.command.compile",
         "title": "Compile current LANG file",
         "category": "Monobank LANG"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "liveLangCompiler",
+        "properties": {
+          "liveLangCompiler.languages": {
+            "": "",
+            "type": "array",
+            "default": [
+              "en"
+            ]
+          }
+        }
       }
     ]
   },
