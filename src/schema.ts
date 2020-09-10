@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as p from "path";
 import { Diagnostic, DiagnosticSeverity, Range, Position } from "vscode";
-import { templatePattern } from "./code-gen";
+import { templatePattern } from "lang-core";
 
 interface SchemaProp {
   name: string;

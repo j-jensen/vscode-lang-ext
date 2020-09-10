@@ -1,5 +1,5 @@
 {
-  "name": "live-lang-compiler",
+  "name": "live-lang-transpiler",
   "displayName": "Monobank live lang compiler",
   "description": "Autogenerates TypeScript typings for .LANG files, and provides basic error-checking.",
   "version": "0.0.7",
@@ -72,5 +72,8 @@
     "mocha": "^8.0.1",
     "typescript": "^3.8.3",
     "vscode-test": "^1.4.0"
+  },
+  "dependencies": {
+    "lang-core": "^1.0.8"
   }
 }
